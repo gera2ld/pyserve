@@ -1,13 +1,20 @@
-pyserve
+gera2ld.pyserve
 ===
 
 Start serving an asyncio.Server
+
+Installation
+---
+
+```sh
+$ pip install gera2ld.pyserve
+```
 
 Usage
 ---
 
 ```py
-from pyserve import serve_forever
+from gera2ld.pyserve import serve_forever
 
 serve_forever(server)
 ```

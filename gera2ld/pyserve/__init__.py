@@ -2,24 +2,33 @@ import os
 import socket
 import asyncio
 
+def get_host_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+        # no real request is send
+    finally:
+        s.close()
+    return ip
+
 def get_hosts(server):
-    hosts = []
     for sock in server.sockets:
         hostname = sock.getsockname()
-        host, port = hostname[:2]
-        def add_port(host):
-            if host is None: return
-            return f'http://{host}:{port}'
-        if host == '0.0.0.0':
-            hosts.append(tuple(map(add_port, (
-                'localhost',
-                socket.gethostbyname(socket.gethostname()),
-            ))))
-        elif host == '::':
-            hosts.append(tuple(map(add_port, ('[::1]', None))))
+        if isinstance(hostname, str):
+            # unix server
+            yield hostname, None
         else:
-            hosts.append(tuple(map(add_port, (None, host))))
-    return hosts
+            host, port = hostname[:2]
+            def add_port(host):
+                if host is None: return
+                return f'http://{host}:{port}'
+            if host == '0.0.0.0':
+                yield add_port('localhost'), add_port(get_host_ip())
+            elif host == '::':
+                yield add_port('[::1]'), None
+            else:
+                yield None, add_port(host)
 
 def wake_up(loop = None):
     if os.name == 'nt':

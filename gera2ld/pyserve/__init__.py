@@ -12,7 +12,7 @@ def get_host_ip():
         s.close()
     return ip
 
-def get_hosts(server):
+def get_hosts(server, scheme):
     for sock in server.sockets:
         hostname = sock.getsockname()
         if isinstance(hostname, str):
@@ -22,7 +22,7 @@ def get_hosts(server):
             host, port = hostname[:2]
             def add_port(host):
                 if host is None: return
-                return f'http://{host}:{port}'
+                return f'{scheme}//{host}:{port}'
             if host == '0.0.0.0':
                 yield add_port('localhost'), add_port(get_host_ip())
             elif host == '::':
@@ -37,14 +37,14 @@ def wake_up(loop = None):
             loop.call_later(.1, wake_up_later)
         wake_up_later()
 
-def serve_forever(servers, loop = None):
+def serve_forever(servers, loop=None, scheme='http:'):
     if loop is None: loop = asyncio.get_event_loop()
-    print('=== Access URLs: ===')
+    print('====================')
     first = True
     if isinstance(servers, asyncio.base_events.Server):
         servers = [servers]
     for server in servers:
-        hosts = get_hosts(server)
+        hosts = get_hosts(server, scheme)
         for local, remote in hosts:
             if first:
                 first = False

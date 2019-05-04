@@ -1,17 +1,14 @@
-gera2ld.pyserve
-===
+# gera2ld.pyserve
 
 Start serving an asyncio.Server, and show information for development.
 
-Installation
----
+## Installation
 
 ```sh
 $ pip install gera2ld-pyserve
 ```
 
-Usage
----
+## Usage
 
 ```py
 from gera2ld.pyserve import serve_forever

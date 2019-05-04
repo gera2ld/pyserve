@@ -7,7 +7,7 @@ Installation
 ---
 
 ```sh
-$ pip install gera2ld.pyserve
+$ pip install gera2ld-pyserve
 ```
 
 Usage

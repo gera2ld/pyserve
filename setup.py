@@ -19,7 +19,7 @@ install_requires = [x.strip() for x in all_reqs if 'git+' not in x]
 dependency_links = [x.strip().replace('git+', '') for x in all_reqs if x.startswith('git+')]
 
 setup(
-    name='gera2ld.pyserve',
+    name='gera2ld-pyserve',
     version=__version__,
     description='Start serving an asyncio.Server',
     long_description=long_description,
@@ -32,7 +32,7 @@ setup(
       'Programming Language :: Python :: 3',
     ],
     keywords='',
-    packages=find_packages(exclude=['docs', 'tests*']),
+    packages=['gera2ld.pyserve'],
     include_package_data=True,
     author='Gerald',
     install_requires=install_requires,

@@ -1,7 +1,7 @@
 gera2ld.pyserve
 ===
 
-Start serving an asyncio.Server
+Start serving an asyncio.Server, and show information for development.
 
 Installation
 ---

@@ -1,6 +1,8 @@
 gera2ld.pyserve
 ===============
 
+.. image:: https://img.shields.io/pypi/v/gera2ld-pyserve.svg
+
 Serve asyncio and aiohttp servers, and show information for development.
 
 Installation

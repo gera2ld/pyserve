@@ -1,6 +1,12 @@
 import os
 import socket
 import asyncio
+import urllib
+
+try:
+    from aiohttp import web
+except:
+    web = None
 
 class UrlItem:
     TYPE_LOCAL = 'local', 'Local:'
@@ -22,6 +28,57 @@ def get_host_ip():
     finally:
         s.close()
     return ip
+
+def parse_addr(host, default=('', 0)):
+    if isinstance(host, tuple):
+        hostname, port = host
+        return { 'host': hostname, 'port': port }
+    if not ':' in host:
+        # assume path to unix socket
+        return { 'path': host }
+    result = urllib.parse.urlparse('//' + host)
+    hostname = result.hostname
+    if hostname is None: hostname = default[0]
+    port = result.port
+    if port is None: port = default[0]
+    return { 'host': hostname, 'port': port }
+
+async def start_server(handle, hostinfo):
+    if isinstance(hostinfo, str):
+        hostinfo = parse_addr(hostinfo)
+    path = hostinfo.get('path')
+    if path:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+        server = await asyncio.start_unix_server(handle, path=path)
+        os.chmod(path, 0o666)
+        return server
+    return await asyncio.start_server(handle, host=hostinfo['host'], port=hostinfo['port'])
+
+async def start_aio_server(handle, hostinfo):
+    assert web is not None, 'module is not found: aiohttp'
+    if isinstance(handle, web.Application):
+        runner = web.AppRunner(handle)
+    else:
+        runner = web.ServerRunner(web.Server(handle))
+    await runner.setup()
+    if isinstance(hostinfo, str):
+        hostinfo = parse_addr(hostinfo)
+    path = hostinfo.get('path')
+    if path:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+        site = web.UnixSite(runner, path)
+    else:
+        site = web.TCPSite(runner, host=hostinfo['host'], port=hostinfo['port'])
+    await site.start()
+    if path:
+        os.chmod(path, 0o666)
+    return runner
 
 def get_url_pairs(hosts, scheme):
     for host in hosts:
@@ -49,9 +106,12 @@ def get_url_items(hosts, scheme='http:'):
             items.append(UrlItem(type=UrlItem.TYPE_REMOTE, data=remote))
         yield items
 
-def get_asyncio_server_hosts(server, scheme):
-    assert isinstance(server, asyncio.base_events.Server)
-    yield from get_url_items([sock.getsockname() for sock in server.sockets], scheme)
+def get_server_hosts(servers, scheme='http:'):
+    for server in servers:
+        if isinstance(server, asyncio.base_events.Server):
+            yield get_url_items([sock.getsockname() for sock in server.sockets], scheme)
+        elif web is not None and isinstance(server, web.BaseRunner):
+            yield get_url_items(server.addresses)
 
 def wake_up(loop=None):
     if os.name == 'nt':
@@ -84,7 +144,15 @@ def print_urls(hosts):
     print('====================')
 
 def serve_forever(servers, loop=None, scheme='http:'):
-    if not isinstance(servers, (list, tuple)):
-        servers = [servers]
-    print_urls(get_asyncio_server_hosts(server, scheme) for server in servers)
+    print_urls(get_server_hosts(servers, scheme))
     run_forever(loop)
+
+def serve_asyncio(handle, hostinfo, **kw):
+    loop = asyncio.get_event_loop()
+    server = loop.run_until_complete(start_server(handle, hostinfo))
+    serve_forever([server], loop, **kw)
+
+def serve_aiohttp(handle, hostinfo, **kw):
+    loop = asyncio.get_event_loop()
+    server = loop.run_until_complete(start_aio_server(handle, hostinfo))
+    serve_forever([server], loop, **kw)

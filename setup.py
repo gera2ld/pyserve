@@ -37,5 +37,8 @@ setup(
     author='Gerald',
     install_requires=install_requires,
     dependency_links=dependency_links,
-    author_email='i@gerald.top'
+    author_email='i@gerald.top',
+    extras_require={
+        'aio': ['aiohttp'],
+    },
 )

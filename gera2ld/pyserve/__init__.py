@@ -1,7 +1,7 @@
 import os
 import socket
 import asyncio
-import urllib
+import urllib.parse
 
 try:
     from aiohttp import web
@@ -40,7 +40,7 @@ def parse_addr(host, default=('', 0)):
     hostname = result.hostname
     if hostname is None: hostname = default[0]
     port = result.port
-    if port is None: port = default[0]
+    if port is None: port = default[1]
     return { 'host': hostname, 'port': port }
 
 async def start_server(handle, hostinfo):

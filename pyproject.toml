@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gera2ld-pyserve"
-version = "0.0.7"
+version = "0.1.0"
 description = "Start serving an asyncio.Server"
 authors = ["Gerald <gera2ld@163.com>"]
 license = "MIT"

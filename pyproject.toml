@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "gera2ld-pyserve"
+version = "0.0.7"
+description = "Start serving an asyncio.Server"
+authors = ["Gerald <gera2ld@163.com>"]
+license = "MIT"
+readme = "README.rst"
+packages = [
+  { include = 'pyserve', from = 'gera2ld' },
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+aiohttp = { version = "^3.6.2", optional = true }
+
+[tool.poetry.extras]
+aio = ["aiohttp"]
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

@@ -6,7 +6,7 @@ authors = ["Gerald <gera2ld@163.com>"]
 license = "MIT"
 readme = "README.rst"
 packages = [
-  { include = 'pyserve', from = 'gera2ld' },
+  { include = 'gera2ld' },
 ]
 
 [tool.poetry.dependencies]

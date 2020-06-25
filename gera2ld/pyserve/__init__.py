@@ -1,7 +1,7 @@
 import os
 import socket
 import asyncio
-import urllib.parse
+from .host import Host
 
 try:
     from aiohttp import web
@@ -29,33 +29,21 @@ def get_host_ip():
         s.close()
     return ip
 
-def parse_addr(host, default=('', 0)):
-    if isinstance(host, tuple):
-        hostname, port = host
-        return { 'host': hostname, 'port': port }
-    if not ':' in host:
-        # assume path to unix socket
-        return { 'path': host }
-    result = urllib.parse.urlparse('//' + host)
-    hostname = result.hostname
-    if hostname is None: hostname = default[0]
-    port = result.port
-    if port is None: port = default[1]
-    return { 'host': hostname, 'port': port }
+def is_path(path):
+    if not isinstance(path, str): return False
+    return path.startswith('/') or path.startswith('file://')
 
 async def start_server(handle, hostinfo):
-    if isinstance(hostinfo, str):
-        hostinfo = parse_addr(hostinfo)
-    path = hostinfo.get('path')
-    if path:
+    if is_path(hostinfo):
         try:
-            os.remove(path)
+            os.remove(hostinfo)
         except FileNotFoundError:
             pass
-        server = await asyncio.start_unix_server(handle, path=path)
-        os.chmod(path, 0o666)
+        server = await asyncio.start_unix_server(handle, path=hostinfo)
+        os.chmod(hostinfo, 0o666)
         return server
-    return await asyncio.start_server(handle, host=hostinfo['host'], port=hostinfo['port'])
+    host = Host(hostinfo)
+    return await asyncio.start_server(handle, host=host.hostname, port=host.port)
 
 async def start_aio_server(handle, hostinfo):
     assert web is not None, 'module is not found: aiohttp'
@@ -64,20 +52,18 @@ async def start_aio_server(handle, hostinfo):
     else:
         runner = web.ServerRunner(web.Server(handle))
     await runner.setup()
-    if isinstance(hostinfo, str):
-        hostinfo = parse_addr(hostinfo)
-    path = hostinfo.get('path')
-    if path:
+    if is_path(hostinfo):
         try:
-            os.remove(path)
+            os.remove(hostinfo)
         except FileNotFoundError:
             pass
-        site = web.UnixSite(runner, path)
+        site = web.UnixSite(runner, hostinfo)
+        await site.start()
+        os.chmod(hostinfo, 0o666)
     else:
-        site = web.TCPSite(runner, host=hostinfo['host'], port=hostinfo['port'])
-    await site.start()
-    if path:
-        os.chmod(path, 0o666)
+        host = Host(hostinfo)
+        site = web.TCPSite(runner, host=host.hostname, port=host.port)
+        await site.start()
     return runner
 
 def get_url_pairs(hosts, scheme):

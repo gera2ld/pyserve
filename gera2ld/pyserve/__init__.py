@@ -19,10 +19,10 @@ class UrlItem:
     def to_str(self):
         return f'{self.type[1]}\t{self.data}'
 
-def get_host_ip():
+def get_host_ip(target=('8.8.8.8', 53)):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(('8.8.8.8', 80))
+        s.connect(target)
         ip = s.getsockname()[0]
         # no real request is send
     finally:

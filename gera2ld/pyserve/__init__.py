@@ -92,23 +92,25 @@ def get_url_items(hosts, scheme='http:'):
             items.append(UrlItem(type=UrlItem.TYPE_REMOTE, data=remote))
         yield items
 
-def get_server_hosts(servers, scheme='http:'):
+def get_server_hosts(servers, scheme):
     for server in servers:
         if isinstance(server, asyncio.base_events.Server):
             yield get_url_items([sock.getsockname() for sock in server.sockets], scheme)
         elif web is not None and isinstance(server, web.BaseRunner):
             yield get_url_items(server.addresses)
 
-def wake_up(loop=None):
+def wake_up():
     if os.name == 'nt':
-        if loop is None: loop = asyncio.get_event_loop()
+        loop = asyncio.get_event_loop()
         def wake_up_later():
             loop.call_later(.1, wake_up_later)
         wake_up_later()
 
-def run_forever(loop=None):
-    if loop is None: loop = asyncio.get_event_loop()
-    wake_up(loop)
+def run_forever(aw=None):
+    wake_up()
+    loop = asyncio.get_event_loop()
+    if aw is not None:
+        loop.run_until_complete(aw)
     loop.run_forever()
 
 def print_urls(hosts):
@@ -129,16 +131,12 @@ def print_urls(hosts):
                 print(item.to_str())
     print('====================')
 
-def serve_forever(servers, loop=None, scheme='http:'):
-    print_urls(get_server_hosts(servers, scheme))
-    run_forever(loop)
+async def start_server_asyncio(handle, hostinfo, scheme='http:'):
+    server = await start_server(handle, hostinfo)
+    print_urls(get_server_hosts([server], scheme))
+    return server
 
-def serve_asyncio(handle, hostinfo, **kw):
-    loop = asyncio.get_event_loop()
-    server = loop.run_until_complete(start_server(handle, hostinfo))
-    serve_forever([server], loop, **kw)
-
-def serve_aiohttp(handle, hostinfo, **kw):
-    loop = asyncio.get_event_loop()
-    server = loop.run_until_complete(start_aio_server(handle, hostinfo))
-    serve_forever([server], loop, **kw)
+async def start_server_aiohttp(handle, hostinfo, scheme='http:'):
+    server = await start_aio_server(handle, hostinfo)
+    print_urls(get_server_hosts([server], scheme))
+    return server

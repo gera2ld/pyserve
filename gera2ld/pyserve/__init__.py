@@ -113,23 +113,27 @@ def run_forever(aw=None):
         loop.run_until_complete(aw)
     loop.run_forever()
 
-def print_urls(hosts):
-    print('====================')
+def repr_urls(hosts):
+    yield '===================='
     first_host = True
     for groups in hosts:
         if first_host:
             first_host = False
         else:
-            print('***')
+            yield '***'
         first_group = True
         for group in groups:
             if first_group:
                 first_group = False
             else:
-                print('---')
+                yield '---'
             for item in group:
-                print(item.to_str())
-    print('====================')
+                yield item.to_str()
+    yield '===================='
+
+def print_urls(hosts):
+    for line in repr_urls(hosts):
+        print(line)
 
 async def start_server_asyncio(handle, hostinfo, scheme='http:'):
     server = await start_server(handle, hostinfo)

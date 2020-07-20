@@ -3,10 +3,20 @@ import socket
 import asyncio
 from .host import Host
 
-try:
-    from aiohttp import web
-except:
-    web = None
+web = None
+
+def load_aiohttp(throw=True):
+    global web
+    global load_aiohttp
+    try:
+        from aiohttp import web
+    except:
+        pass
+    def postload_aiohttp(throw=True):
+        if throw:
+            assert web is not None, 'module is not found: aiohttp'
+    load_aiohttp = postload_aiohttp
+    return load_aiohttp(throw)
 
 class UrlItem:
     TYPE_LOCAL = 'local', 'Local:'
@@ -46,7 +56,7 @@ async def start_server(handle, hostinfo):
     return await asyncio.start_server(handle, host=host.hostname, port=host.port)
 
 async def start_aio_server(handle, hostinfo):
-    assert web is not None, 'module is not found: aiohttp'
+    load_aiohttp()
     if isinstance(handle, web.Application):
         runner = web.AppRunner(handle)
     else:
@@ -96,8 +106,10 @@ def get_server_hosts(servers, scheme):
     for server in servers:
         if isinstance(server, asyncio.base_events.Server):
             yield get_url_items([sock.getsockname() for sock in server.sockets], scheme)
-        elif web is not None and isinstance(server, web.BaseRunner):
-            yield get_url_items(server.addresses)
+        else:
+            load_aiohttp(throw=False)
+            if web is not None and isinstance(server, web.BaseRunner):
+                yield get_url_items(server.addresses)
 
 def wake_up():
     if os.name == 'nt':

@@ -30,14 +30,15 @@ class UrlItem:
         return f'{self.type[1]}\t{self.data}'
 
 def get_host_ip(target=('8.8.8.8', 53)):
+    s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(target)
-        ip = s.getsockname()[0]
+        return s.getsockname()[0]
         # no real request is send
     finally:
-        s.close()
-    return ip
+        if s is not None:
+            s.close()
 
 def is_path(path):
     if not isinstance(path, str): return False

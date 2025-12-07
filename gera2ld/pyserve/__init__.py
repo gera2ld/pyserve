@@ -3,6 +3,20 @@ import socket
 import asyncio
 from .host import Host
 
+
+def _ensure_event_loop():
+    """Return the current event loop, creating and setting one if none exists.
+
+    This makes the code compatible with Python 3.14 where
+    `asyncio.get_event_loop()` raises if no loop is set for the thread.
+    """
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
+
 web = None
 
 def load_aiohttp(throw=True):
@@ -114,14 +128,14 @@ def get_server_hosts(servers, scheme):
 
 def wake_up():
     if os.name == 'nt':
-        loop = asyncio.get_event_loop()
+        loop = _ensure_event_loop()
         def wake_up_later():
             loop.call_later(.1, wake_up_later)
         wake_up_later()
 
 def run_forever(aw=None):
     wake_up()
-    loop = asyncio.get_event_loop()
+    loop = _ensure_event_loop()
     if aw is not None:
         loop.run_until_complete(aw)
     loop.run_forever()
